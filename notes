@@ -1,0 +1,1418 @@
+
+https://login.databricks.com/?dbx_source=www&itm_data=databricks-web-nav&intent=CE_SIGN_UP&l=en-EN&tuuid=0f3b6aa4-ed13-4604-9dd0-7a9acd902959&rl_aid=5e4617ff-9fda-48e7-9d2d-dbc924c66f66
+
+
+
+ps aux | grep chrome
+rm -rf ~/.config/google-chrome/SingletonLock 
+rm -rf ~/.config/google-chrome/SingletonCookie
+rm -rf ~/.config/google-chrome/*
+google-chrome-stable
+
+==================================================
+Day 6 
+
+Banking Data: PySpark Assessment
+1. Spark Session Creation
+
+from pyspark.sql import SparkSession
+
+# Create Spark session
+spark = SparkSession.builder.appName("BankingDataAssessment").getOrCreate()
+
+
+
+2. Sample Data Creation
+We will create two datasets: Customers and Transactions.
+
+Customers: Information about bank customers.
+
+Transactions: Information about each transaction made by customers.
+
+
+from pyspark.sql.types import *
+
+# Sample customer data
+customer_data = [
+    (1, "John Doe", "New York", "john.doe@example.com"),
+    (2, "Alice Smith", "Los Angeles", "alice.smith@example.com"),
+    (3, "Bob Johnson", "Chicago", "bob.johnson@example.com"),
+    (4, "Charlie Brown", "Houston", "charlie.brown@example.com")
+]
+
+customer_columns = ["CustomerID", "Name", "City", "Email"]
+
+# Create customer DataFrame
+customer_df = spark.createDataFrame(customer_data, customer_columns)
+
+# Sample transaction data
+transaction_data = [
+    (1, 1001, "2025-01-01", 2500.0),
+    (2, 1002, "2025-01-02", 5000.0),
+    (1, 1003, "2025-01-03", 1500.0),
+    (3, 1004, "2025-02-01", 1200.0),
+    (2, 1005, "2025-02-05", 3000.0),
+    (4, 1006, "2025-02-10", 4500.0)
+]
+
+transaction_columns = ["CustomerID", "TransactionID", "TransactionDate", "Amount"]
+
+# Create transaction DataFrame
+transaction_df = spark.createDataFrame(transaction_data, transaction_columns)
+3. Show Sample Data
+
+# Show Customer Data
+print("Customer Data:")
+customer_df.show()
+
+# Show Transaction Data
+print("Transaction Data:")
+transaction_df.show()
+4. Join Customers with Transactions
+Objective: Perform an inner join between the customer and transaction DataFrames to get all transactions with corresponding customer information.
+
+python
+Copy
+Edit
+# Perform inner join between customer and transaction data
+joined_df = customer_df.join(transaction_df, on="CustomerID", how="inner")
+
+# Show joined data
+print("Joined Data (Customers + Transactions):")
+joined_df.show()
+5. Filter Transactions Based on Amount
+Objective: Filter transactions where the amount is greater than 3000.
+
+python
+Copy
+Edit
+# Filter transactions where amount > 3000
+filtered_transactions = joined_df.filter(col("Amount") > 3000)
+
+# Show filtered data
+print("Filtered Transactions (Amount > 3000):")
+filtered_transactions.show()
+6. Aggregation: Total Amount Spent by Each Customer
+Objective: Find the total amount spent by each customer.
+
+python
+Copy
+Edit
+# Group by CustomerID and sum the transaction amounts
+total_spent_df = joined_df.groupBy("CustomerID", "Name").agg(sum("Amount").alias("TotalSpent"))
+
+# Show total spent by each customer
+print("Total Amount Spent by Each Customer:")
+total_spent_df.show()
+7. Sorting: Sort Customers by Total Amount Spent
+Objective: Sort the customers by the total amount spent in descending order.
+
+python
+Copy
+Edit
+# Sort customers by total amount spent in descending order
+sorted_customers_df = total_spent_df.orderBy(col("TotalSpent").desc())
+
+# Show sorted customers
+print("Customers Sorted by Total Amount Spent:")
+sorted_customers_df.show()
+8. Add New Column: Number of Transactions Per Customer
+Objective: Add a new column to show the number of transactions each customer made.
+
+
+# Group by CustomerID and count the number of transactions
+transactions_count_df = joined_df.groupBy("CustomerID", "Name").agg(count("TransactionID").alias("NumTransactions"))
+
+# Join with total_spent_df to add number of transactions
+final_df = total_spent_df.join(transactions_count_df, on="CustomerID")
+
+# Show final DataFrame with TotalSpent and NumTransactions
+print("Final Data (TotalSpent + NumTransactions):")
+final_df.show()
+9. Date Filter: Transactions in January 2025
+Objective: Filter the transactions that occurred in January 2025.
+
+python
+Copy
+Edit
+# Filter transactions that occurred in January 2025
+jan_transactions_df = joined_df.filter((col("TransactionDate") >= "2025-01-01") & (col("TransactionDate") <= "2025-01-31"))
+
+# Show January transactions
+print("Transactions in January 2025:")
+jan_transactions_df.show()
+10. Window Function: Rank Customers Based on Total Amount Spent
+Objective: Use a window function to rank customers based on the total amount spent.
+
+python
+Copy
+Edit
+from pyspark.sql.window import Window
+
+# Define window spec to order by TotalSpent
+windowSpec = Window.orderBy(col("TotalSpent").desc())
+
+# Add rank column
+ranked_customers_df = total_spent_df.withColumn("Rank", rank().over(windowSpec))
+
+# Show ranked customers
+print("Customers Ranked by Total Amount Spent:")
+ranked_customers_df.show()
+Banking Data: PySpark Assessment
+1. Spark Session Creation
+python
+Copy
+Edit
+from pyspark.sql import SparkSession
+
+# Create Spark session
+spark = SparkSession.builder.appName("BankingDataAssessment").getOrCreate()
+2. Sample Data Creation
+We will create two datasets: Customers and Transactions.
+
+Customers: Information about bank customers.
+
+Transactions: Information about each transaction made by customers.
+
+python
+Copy
+Edit
+from pyspark.sql.types import *
+
+# Sample customer data
+customer_data = [
+    (1, "John Doe", "New York", "john.doe@example.com"),
+    (2, "Alice Smith", "Los Angeles", "alice.smith@example.com"),
+    (3, "Bob Johnson", "Chicago", "bob.johnson@example.com"),
+    (4, "Charlie Brown", "Houston", "charlie.brown@example.com")
+]
+
+customer_columns = ["CustomerID", "Name", "City", "Email"]
+
+# Create customer DataFrame
+customer_df = spark.createDataFrame(customer_data, customer_columns)
+
+# Sample transaction data
+transaction_data = [
+    (1, 1001, "2025-01-01", 2500.0),
+    (2, 1002, "2025-01-02", 5000.0),
+    (1, 1003, "2025-01-03", 1500.0),
+    (3, 1004, "2025-02-01", 1200.0),
+    (2, 1005, "2025-02-05", 3000.0),
+    (4, 1006, "2025-02-10", 4500.0)
+]
+
+transaction_columns = ["CustomerID", "TransactionID", "TransactionDate", "Amount"]
+
+# Create transaction DataFrame
+transaction_df = spark.createDataFrame(transaction_data, transaction_columns)
+3. Show Sample Data
+python
+Copy
+Edit
+# Show Customer Data
+print("Customer Data:")
+customer_df.show()
+
+# Show Transaction Data
+print("Transaction Data:")
+transaction_df.show()
+4. Join Customers with Transactions
+Objective: Perform an inner join between the customer and transaction DataFrames to get all transactions with corresponding customer information.
+
+python
+Copy
+Edit
+# Perform inner join between customer and transaction data
+joined_df = customer_df.join(transaction_df, on="CustomerID", how="inner")
+
+# Show joined data
+print("Joined Data (Customers + Transactions):")
+joined_df.show()
+5. Filter Transactions Based on Amount
+Objective: Filter transactions where the amount is greater than 3000.
+
+python
+Copy
+Edit
+# Filter transactions where amount > 3000
+filtered_transactions = joined_df.filter(col("Amount") > 3000)
+
+# Show filtered data
+print("Filtered Transactions (Amount > 3000):")
+filtered_transactions.show()
+6. Aggregation: Total Amount Spent by Each Customer
+Objective: Find the total amount spent by each customer.
+
+python
+Copy
+Edit
+# Group by CustomerID and sum the transaction amounts
+total_spent_df = joined_df.groupBy("CustomerID", "Name").agg(sum("Amount").alias("TotalSpent"))
+
+# Show total spent by each customer
+print("Total Amount Spent by Each Customer:")
+total_spent_df.show()
+7. Sorting: Sort Customers by Total Amount Spent
+Objective: Sort the customers by the total amount spent in descending order.
+
+python
+Copy
+Edit
+# Sort customers by total amount spent in descending order
+sorted_customers_df = total_spent_df.orderBy(col("TotalSpent").desc())
+
+# Show sorted customers
+print("Customers Sorted by Total Amount Spent:")
+sorted_customers_df.show()
+8. Add New Column: Number of Transactions Per Customer
+Objective: Add a new column to show the number of transactions each customer made.
+
+python
+Copy
+Edit
+# Group by CustomerID and count the number of transactions
+transactions_count_df = joined_df.groupBy("CustomerID", "Name").agg(count("TransactionID").alias("NumTransactions"))
+
+# Join with total_spent_df to add number of transactions
+final_df = total_spent_df.join(transactions_count_df, on="CustomerID")
+
+# Show final DataFrame with TotalSpent and NumTransactions
+print("Final Data (TotalSpent + NumTransactions):")
+final_df.show()
+9. Date Filter: Transactions in January 2025
+Objective: Filter the transactions that occurred in January 2025.
+
+python
+Copy
+Edit
+# Filter transactions that occurred in January 2025
+jan_transactions_df = joined_df.filter((col("TransactionDate") >= "2025-01-01") & (col("TransactionDate") <= "2025-01-31"))
+
+# Show January transactions
+print("Transactions in January 2025:")
+jan_transactions_df.show()
+10. Window Function: Rank Customers Based on Total Amount Spent
+Objective: Use a window function to rank customers based on the total amount spent.
+
+python
+Copy
+Edit
+from pyspark.sql.window import Window
+
+# Define window spec to order by TotalSpent
+windowSpec = Window.orderBy(col("TotalSpent").desc())
+
+# Add rank column
+ranked_customers_df = total_spent_df.withColumn("Rank", rank().over(windowSpec))
+
+# Show ranked customers
+print("Customers Ranked by Total Amount Spent:")
+ranked_customers_df.show()
+RowNumber,CustomerId,Surname,CreditScore,Geography,Gender,Age,Tenure,Balance,NumOfProducts,IsActiveMember,EstimatedSalary,Exited
+1,15634602,Hargrave,619,France,Female,42,2,0,1,1,101348.88,1
+2,15647311,Hill,608,Spain,Female,41,1,83807.86,1,1,112542.58,0
+3,15619304,Onio,502,France,Female,42,8,159660.8,3,0,113931.57,1
+4,15701354,Boni,699,France,Female,39,1,0,2,0,93826.63,0
+5,15737888,Mitchell,850,Spain,Female,43,2,125510.82,1,1,79084.1,0
+6,15574012,Chu,645,Spain,Male,44,8,113755.78,2,0,149756.71,1
+7,15592531,Bartlett,822,France,Male,50,7,0,2,1,10062.8,0
+8,15656148,Obinna,376,Germany,Female,29,4,115046.74,4,0,119346.88,1
+9,15792365,He,501,France,Male,44,4,142051.07,2,1,74940.5,0
+10,15592389,H?,684,France,Male,27,2,134603.88,1,1,71725.73,0
+11,15767821,Bearce,528,France,Male,31,6,102016.72,2,0,80181.12,0
+12,15737173,Andrews,497,Spain,Male,24,3,0,2,0,76390.01,0
+13,15632264,Kay,476,France,Female,34,10,0,2,0,26260.98,0
+14,15691483,Chin,549,France,Female,25,5,0,2,0,190857.79,0
+15,15600882,Scott,635,Spain,Female,35,7,0,2,1,65951.65,0
+16,15643966,Goforth,616,Germany,Male,45,3,143129.41,2,1,64327.26,0
+17,15737452,Romeo,653,Germany,Male,58,1,132602.88,1,0,5097.67,1
+18,15788218,Henderson,549,Spain,Female,24,9,0,2,1,14406.41,0
+19,15661507,Muldrow,587,Spain,Male,45,6,0,1,0,158684.81,0
+20,15568982,Hao,726,France,Female,24,6,0,2,1,54724.03,0
+21,15577657,McDonald,732,France,Male,41,8,0,2,1,170886.17,0
+22,15597945,Dellucci,636,Spain,Female,32,8,0,2,0,138555.46,0
+23,15699309,Gerasimov,510,Spain,Female,38,4,0,1,0,118913.53,1
+24,15725737,Mosman,669,France,Male,46,3,0,2,1,8487.75,0
+25,15625047,Yen,846,France,Female,38,5,0,1,1,187616.16,0
+26,15738191,Maclean,577,France,Male,25,3,0,2,1,124508.29,0
+27,15736816,Young,756,Germany,Male,36,2,136815.64,1,1,170041.95,0
+28,15700772,Nebechi,571,France,Male,44,9,0,2,0,38433.35,0
+29,15728693,McWilliams,574,Germany,Female,43,3,141349.43,1,1,100187.43,0
+30,15656300,Lucciano,411,France,Male,29,0,59697.17,2,1,53483.21,0
+31,15589475,Azikiwe,591,Spain,Female,39,3,0,3,0,140469.38,1
+32,15706552,Odinakachukwu,533,France,Male,36,7,85311.7,1,1,156731.91,0
+33,15750181,Sanderson,553,Germany,Male,41,9,110112.54,2,0,81898.81,0
+34,15659428,Maggard,520,Spain,Female,42,6,0,2,1,34410.55,0
+35,15732963,Clements,722,Spain,Female,29,9,0,2,1,142033.07,0
+36,15794171,Lombardo,475,France,Female,45,0,134264.04,1,0,27822.99,1
+37,15788448,Watson,490,Spain,Male,31,3,145260.23,1,1,114066.77,0
+38,15729599,Lorenzo,804,Spain,Male,33,7,76548.6,1,1,98453.45,0
+39,15717426,Armstrong,850,France,Male,36,7,0,1,1,40812.9,0
+40,15585768,Cameron,582,Germany,Male,41,6,70349.48,2,1,178074.04,0
+41,15619360,Hsiao,472,Spain,Male,40,4,0,1,0,70154.22,0
+42,15738148,Clarke,465,France,Female,51,8,122522.32,1,0,181297.65,1
+43,15687946,Osborne,556,France,Female,61,2,117419.35,1,1,94153.83,0
+44,15755196,Lavine,834,France,Female,49,2,131394.56,1,0,194365.76,1
+45,15684171,Bianchi,660,Spain,Female,61,5,155931.11,1,1,158338.39,0
+46,15754849,Tyler,776,Germany,Female,32,4,109421.13,2,1,126517.46,0
+47,15602280,Martin,829,Germany,Female,27,9,112045.67,1,1,119708.21,1
+48,15771573,Okagbue,637,Germany,Female,39,9,137843.8,1,1,117622.8,1
+49,15766205,Yin,550,Germany,Male,38,2,103391.38,1,1,90878.13,0
+50,15771873,Buccho,776,Germany,Female,37,2,103769.22,2,0,194099.12,0
+51,15616550,Chidiebele,698,Germany,Male,44,10,116363.37,2,0,198059.16,0
+52,15768193,Trevisani,585,Germany,Male,36,5,146050.97,2,0,86424.57,0
+53,15683553,O'Brien,788,France,Female,33,5,0,2,0,116978.19,0
+54,15702298,Parkhill,655,Germany,Male,41,8,125561.97,1,0,164040.94,1
+55,15569590,Yoo,601,Germany,Male,42,1,98495.72,1,0,40014.76,1
+56,15760861,Phillipps,619,France,Male,43,1,125211.92,1,1,113410.49,0
+57,15630053,Tsao,656,France,Male,45,5,127864.4,1,0,87107.57,0
+58,15647091,Endrizzi,725,Germany,Male,19,0,75888.2,1,0,45613.75,0
+59,15623944,T'ien,511,Spain,Female,66,4,0,1,0,1643.11,1
+60,15804771,Velazquez,614,France,Male,51,4,40685.92,1,1,46775.28,0
+61,15651280,Hunter,742,Germany,Male,35,5,136857,1,0,84509.57,0
+62,15773469,Clark,687,Germany,Female,27,9,152328.88,2,0,126494.82,0
+63,15702014,Jeffrey,555,Spain,Male,33,1,56084.69,2,0,178798.13,0
+64,15751208,Pirozzi,684,Spain,Male,56,8,78707.16,1,1,99398.36,0
+65,15592461,Jackson,603,Germany,Male,26,4,109166.37,1,1,92840.67,0
+66,15789484,Hammond,751,Germany,Female,36,6,169831.46,2,1,27758.36,0
+67,15696061,Brownless,581,Germany,Female,34,1,101633.04,1,0,110431.51,0
+68,15641582,Chibugo,735,Germany,Male,43,10,123180.01,2,1,196673.28,0
+69,15638424,Glauert,661,Germany,Female,35,5,150725.53,2,1,113656.85,0
+70,15755648,Pisano,675,France,Female,21,8,98373.26,1,0,18203,0
+71,15703793,Konovalova,738,Germany,Male,58,2,133745.44,4,0,28373.86,1
+72,15620344,McKee,813,France,Male,29,6,0,1,0,33953.87,0
+73,15812518,Palermo,657,Spain,Female,37,0,163607.18,1,1,44203.55,0
+74,15779052,Ballard,604,Germany,Female,25,5,157780.84,2,1,58426.81,0
+75,15770811,Wallace,519,France,Male,36,9,0,2,1,145562.4,0
+76,15780961,Cavenagh,735,France,Female,21,1,178718.19,2,0,22388,0
+77,15614049,Hu,664,France,Male,55,8,0,2,1,139161.64,0
+78,15662085,Read,678,France,Female,32,9,0,1,1,148210.64,0
+79,15575185,Bushell,757,Spain,Male,33,5,77253.22,1,1,194239.63,0
+80,15803136,Postle,416,Germany,Female,41,10,122189.66,2,0,98301.61,0
+81,15706021,Buley,665,France,Female,34,1,96645.54,2,0,171413.66,0
+82,15663706,Leonard,777,France,Female,32,2,0,1,0,136458.19,1
+83,15641732,Mills,543,France,Female,36,3,0,2,0,26019.59,0
+84,15701164,Onyeorulu,506,France,Female,34,4,90307.62,1,1,159235.29,0
+85,15738751,Beit,493,France,Female,46,4,0,2,0,1907.66,0
+86,15805254,Ndukaku,652,Spain,Female,75,10,0,2,1,114675.75,0
+87,15762418,Gant,750,Spain,Male,22,3,121681.82,1,0,128643.35,1
+88,15625759,Rowley,729,France,Male,30,9,0,2,0,151869.35,0
+89,15622897,Sharpe,646,France,Female,46,4,0,3,0,93251.42,1
+90,15767954,Osborne,635,Germany,Female,28,3,81623.67,2,1,156791.36,0
+91,15757535,Heap,647,Spain,Female,44,5,0,3,1,174205.22,1
+92,15731511,Ritchie,808,France,Male,45,7,118626.55,2,0,147132.46,0
+93,15809248,Cole,524,France,Female,36,10,0,2,0,109614.57,0
+94,15640635,Capon,769,France,Male,29,8,0,2,1,172290.61,0
+95,15676966,Capon,730,Spain,Male,42,4,0,2,1,85982.47,0
+96,15699461,Fiorentini,515,Spain,Male,35,10,176273.95,1,1,121277.78,0
+97,15738721,Graham,773,Spain,Male,41,9,102827.44,1,1,64595.25,0
+98,15693683,Yuille,814,Germany,Male,29,8,97086.4,2,1,197276.13,0
+99,15604348,Allard,710,Spain,Male,22,8,0,2,0,99645.04,0
+100,15633059,Fanucci,413,France,Male,34,9,0,2,0,6534.18,0
+101,15808582,Fu,665,France,Female,40,6,0,1,1,161848.03,0
+102,15743192,Hung,623,France,Female,44,6,0,2,0,167162.43,0
+103,15580146,Hung,738,France,Male,31,9,82674.15,1,0,41970.72,0
+104,15776605,Bradley,528,Spain,Male,36,7,0,2,0,60536.56,0
+105,15804919,Dunbabin,670,Spain,Female,65,1,0,1,1,177655.68,1
+106,15613854,Mauldon,622,Spain,Female,46,4,107073.27,2,1,30984.59,1
+107,15599195,Stiger,582,Germany,Male,32,1,88938.62,1,1,10054.53,0
+108,15812878,Parsons,785,Germany,Female,36,2,99806.85,1,1,36976.52,0
+109,15602312,Walkom,605,Spain,Male,33,5,150092.8,1,0,71862.79,0
+110,15744689,T'ang,479,Germany,Male,35,9,92833.89,1,0,99449.86,1
+111,15803526,Eremenko,685,Germany,Male,30,3,90536.81,1,1,63082.88,0
+112,15665790,Rowntree,538,Germany,Male,39,7,108055.1,2,0,27231.26,0
+113,15715951,Thorpe,562,France,Male,42,2,100238.35,1,0,86797.41,0
+114,15591100,Chiemela,675,Spain,Male,36,9,106190.55,1,1,22994.32,0
+115,15609618,Fanucci,721,Germany,Male,28,9,154475.54,2,1,101300.94,1
+116,15675522,Ko,628,Germany,Female,30,9,132351.29,2,1,74169.13,0
+117,15705512,Welch,668,Germany,Female,37,6,167864.4,1,0,115638.29,0
+118,15698028,Duncan,506,France,Female,41,1,0,2,0,31766.3,0
+119,15661670,Chidozie,524,Germany,Female,31,8,107818.63,1,0,199725.39,1
+120,15600781,Wu,699,Germany,Male,34,4,185173.81,2,0,120834.48,0
+
+
+
+================================================================
+. Read CSV File
+Read the given customer.csv file.
+
+Use inferSchema = True and header = True.
+
+Save it into a DataFrame called df_customers.
+
+
+🔍 2. Perform Filters
+Filter customers who are from France and have CreditScore > 600.
+
+Show the filtered records.
+
+
+df_filtered.show()
+📊 3. Perform Aggregation
+Find the average EstimatedSalary and maximum Balance grouped by Geography.
+
+
+
+).show()
+🔁 4. Type Conversion
+Convert the IsActiveMember column from integer to string.
+
+python
+Copy
+Edit
+
+)
+📈 5. Sorting
+Sort customers by CreditScore descending and Age ascending.
+
+python
+Copy
+Edit
+
+🥇 6. Extract Top 3 Values in a List
+Extract the top 3 CreditScores into a Python list.
+
+python
+Copy
+Edit
+
+
+print(top3_creditscores)
+🏆 7. Extract Only the Top 1 Value from DataFrame
+Extract the customer with the highest Balance.
+
+python
+Copy
+Edit
+
+🕒 8. Convert to Unix Timestamp
+Create a new column current_time with current timestamp and Unix timestamp.
+
+================================================================
+	final_df.show()
+9. Date Filter: Transactions in January 2025
+Objective: Filter the transactions that occurred in January 2025.
+
+
+# Filter transactions that occurred in January 2025
+jan_transactions_df = joined_df.filter((col("TransactionDate") >= "2025-01-01") & (col("TransactionDate") <= "2025-01-31"))
+
+# Show January transactions
+print("Transactions in January 2025:")
+jan_transactions_df.show()
+10. Window Function: Rank Customers Based on Total Amount Spent
+Objective: Use a window function to rank customers based on the total amount spent.
+
+
+from pyspark.sql.window import Window
+
+# Define window spec to order by TotalSpent
+windowSpec = Window.orderBy(col("TotalSpent").desc())
+
+# Add rank column
+ranked_customers_df = total_spent_df.withColumn("Rank", rank().over(windowSpec))
+
+# Show ranked customers
+print("Customers Ranked by Total Amount Spent:")
+ranked_customers_df.show()
+
+========================================================================
+// Convert Unix timestamp to timestamp
+df3=df2.select(
+    from_unixtime(col("timestamp_1")).alias("timestamp_1"),
+    from_unixtime(col("timestamp_2"),"MM-dd-yyyy HH:mm:ss").alias("timestamp_2"),
+    from_unixtime(col("timestamp_3"),"MM-dd-yyyy").alias("timestamp_3"),
+    from_unixtime(col("timestamp_4")).alias("timestamp_4")
+  )
+df3.printSchema()
+df3.show(truncate=False)
+===========================================================
+users_df_parq.withColumn("favorite_numbers",explode("favorite_numbers")).show()
+
+users_df_parq=spark.read.load("file:///home/ubuntu/datasets/fileformats/users.parquet")
+
+users_df_orc=spark.read.orc("file:///home/ubuntu/datasets/fileformats/users.orc")
+==============================================
+EmpSchema = StructType([  
+    StructField('Emp_id', IntegerType(), True), 
+    StructField('Empname', StringType(), True),
+    StructField('MGR', IntegerType(), True), 
+   StructField('YOJ', StringType(), True), 
+     StructField('dept_id', StringType(), True), 
+    StructField('gender', StringType(), True), 
+     StructField('salary', DoubleType(), True) 
+])
+
+emp = [(1,"Smith",1,"2018","10","M",3000.00), \
+    (2,"Rose",1,"2010","20","M",4000.00), \
+    (3,"Williams",1,"2010","10","M",1000.00), \
+    (4,"Jones",2,"2005","10","F",2000.00), \
+    (5,"Brown",2,"2010","40","",300.00), \
+      (6,"Brown",2,"2010","50","",2000.00) \
+  ]
+
+empDF = spark.createDataFrame(data=emp, schema = EmpSchema)
+
+
+dept = [("Finance",10), \
+    ("Marketing",20), \
+    ("Sales",30), \
+    ("IT",40) \
+  ]
+
+deptColumns = ["dept_name","dept_id"]
+deptDF = spark.createDataFrame(data=dept, schema = deptColumns)
+empDF.join(deptDF, empDF["emp_dept_id"] == deptDF["dept_id"], "inner").show()
+
+
+
+
+  println("Outer join")
+  
+empDF.join(deptDF,empDF["dept_id"]== deptDF["dept_id"],"inner").show()
+  empDF.join(deptDF,"dept_id","inner").show(false)
+  println("full join")
+  empDF.join(deptDF,empDF("dept_id")==  deptDF("dept_id"),"left")
+    .show(false)
+  println("fullouter join")
+  empDF.join(deptDF,empDF("dept_id")==  deptDF("dept_id"),"fullouter")
+    .show(false)
+=====================================================
+employees_df=spark.read.schema(Employees_schema).option("mode","permissive").csv("file:///home/ubuntu/datasets/employees.csv",header=True)
+
+employees_df.write.mode("overwrite").parquet("file:///home/ubuntu/target/empdf_parq")
+
+employees_df.write.mode("append").csv("file:///home/ubuntu/target/empdf")
+
+employees_df.write.format("orc").mode("overwrite").save("file:///home/ubuntu/target/empdf_orc")
+
+### spark by default write it in parquet file ,if no format is mentioned 
+employees_df.write.mode("overwrite").save("file:///home/ubuntu/target/empdf_tgt")
+
+employees_df.write.mode("ignore").json("file:///home/ubuntu/target/empdf_json")
+
+
+employees_df.createTempView("employees")
+
+spark.sql("show tables").show()
+
+spark.sql("select * from employees").show()
+
+
+==============================================================
+from pyspark.sql.types import *
+EmpSchema=StructType([
+    StructField("Employee_id",IntegerType(),True),
+    StructField("First_name",StringType(),True),
+    StructField("last_name",StringType(),True),
+    StructField("email",StringType(),True),
+    StructField("Phone_number",StringType(),True),
+    StructField("Hire_date",StringType(),True),
+    StructField("job_id",IntegerType(),True),
+    StructField("Salary",DoubleType(),True),
+    StructField("Commision_pct",IntegerType(),True),
+    StructField("Manager_id",IntegerType(),True),
+    StructField("department_id",IntegerType(),True)])
+===================================================
+empdf=spark.read.csv("file:///home/ubuntu/datasets/employee.csv",header=True,inferSchema=True)
+
+###user defined schema 
+Empschema = StructType([
+    StructField("Employee_no", IntegerType(), True)
+    StructField("Employee_name", StringType(), True),
+    StructField("Salary", DoubleType(), True)
+])
+
+empdf_perm=spark.read.schema(Empschema).option("mode","permissive").csv("file:///home/ubuntu/datasets/employee.csv",header=True)
+
+empdf_dropmal=spark.read.schema(Empschema).option("mode","dropmalformed").csv("file:///home/ubuntu/datasets/employee.csv",header=True)
+
+empdf_ff=spark.read.schema(Empschema).option("mode","failfast").csv("file:///home/ubuntu/datasets/employee.csv",header=True)
+
+empdf_perm.na.drop("all").show()
+
+empdf_perm.na.drop(subset=[employee_no]).show()
+
+
+empdf=spark.read.csv("file:///home/ubuntu/datasets/employee.csv",header=True,inferSchema=True)
+
+===================================================================
+Day 5
+
+
+employees_df=spark.read.option("header","true").option("inferSchema","true").option("sep",",").csv("file:///home/ubuntu/employees.csv")
+
+
+
+employees_df.groupBy("department_id") \
+    .agg(sum("salary").alias("Totsalary")) \
+    .orderBy("Totsalary",ascending=False) \
+    .show(3)
+
+
+from pyspark.sql.functions import lit 
+employees_df.withColumn("location" ,lit("Mahape")).show()
+
+employees_df.withColumn("fullname",  concat(col("first_name"), col("last_name")).show()
+
+employees_df.withColumn("fullname",  concat(col("first_name"), col("last_name")).drop("first_name","last_name").show()
+
+employees_df.withColumn("fullname",  concat_ws( " ",col("first_name"), col("last_name")).show()
+employees_df.withColumn("fullname",  concat_ws( " - ",col("first_name"), col("last_name")).show()
+
+
+=====================employees.csv==================
+EMPLOYEE_ID,FIRST_NAME,LAST_NAME,EMAIL,PHONE_NUMBER,HIRE_DATE,JOB_ID,SALARY,COMMISSION_PCT,MANAGER_ID,DEPARTMENT_ID
+198,Donald,OConnell,DOCONNEL,650.507.9833,21-JUN-07,SH_CLERK,2600, - ,124,50
+199,Douglas,Grant,DGRANT,650.507.9844,13-JAN-08,SH_CLERK,2600, - ,124,50
+200,Jennifer,Whalen,JWHALEN,515.123.4444,17-SEP-03,AD_ASST,4400, - ,101,10
+201,Michael,Hartstein,MHARTSTE,515.123.5555,17-FEB-04,MK_MAN,13000, - ,100,20
+202,Pat,Fay,PFAY,603.123.6666,17-AUG-05,MK_REP,6000, - ,201,20
+203,Susan,Mavris,SMAVRIS,515.123.7777,07-JUN-02,HR_REP,6500, - ,101,40
+204,Hermann,Baer,HBAER,515.123.8888,07-JUN-02,PR_REP,10000, - ,101,70
+205,Shelley,Higgins,SHIGGINS,515.123.8080,07-JUN-02,AC_MGR,12008, - ,101,110
+206,William,Gietz,WGIETZ,515.123.8181,07-JUN-02,AC_ACCOUNT,8300, - ,205,110
+100,Steven,King,SKING,515.123.4567,17-JUN-03,AD_PRES,24000, - , - ,90
+101,Neena,Kochhar,NKOCHHAR,515.123.4568,21-SEP-05,AD_VP,17000, - ,100,90
+102,Lex,De Haan,LDEHAAN,515.123.4569,13-JAN-01,AD_VP,17000, - ,100,90
+103,Alexander,Hunold,AHUNOLD,590.423.4567,03-JAN-06,IT_PROG,9000, - ,102,60
+104,Bruce,Ernst,BERNST,590.423.4568,21-MAY-07,IT_PROG,6000, - ,103,60
+105,David,Austin,DAUSTIN,590.423.4569,25-JUN-05,IT_PROG,4800, - ,103,60
+106,Valli,Pataballa,VPATABAL,590.423.4560,05-FEB-06,IT_PROG,4800, - ,103,60
+107,Diana,Lorentz,DLORENTZ,590.423.5567,07-FEB-07,IT_PROG,4200, - ,103,60
+108,Nancy,Greenberg,NGREENBE,515.124.4569,17-AUG-02,FI_MGR,12008, - ,101,100
+109,Daniel,Faviet,DFAVIET,515.124.4169,16-AUG-02,FI_ACCOUNT,9000, - ,108,100
+110,John,Chen,JCHEN,515.124.4269,28-SEP-05,FI_ACCOUNT,8200, - ,108,100
+111,Ismael,Sciarra,ISCIARRA,515.124.4369,30-SEP-05,FI_ACCOUNT,7700, - ,108,100
+112,Jose Manuel,Urman,JMURMAN,515.124.4469,07-MAR-06,FI_ACCOUNT,7800, - ,108,100
+113,Luis,Popp,LPOPP,515.124.4567,07-DEC-07,FI_ACCOUNT,6900, - ,108,100
+114,Den,Raphaely,DRAPHEAL,515.127.4561,07-DEC-02,PU_MAN,11000, - ,100,30
+115,Alexander,Khoo,AKHOO,515.127.4562,18-MAY-03,PU_CLERK,3100, - ,114,30
+116,Shelli,Baida,SBAIDA,515.127.4563,24-DEC-05,PU_CLERK,2900, - ,114,30
+117,Sigal,Tobias,STOBIAS,515.127.4564,24-JUL-05,PU_CLERK,2800, - ,114,30
+118,Guy,Himuro,GHIMURO,515.127.4565,15-NOV-06,PU_CLERK,2600, - ,114,30
+119,Karen,Colmenares,KCOLMENA,515.127.4566,10-AUG-07,PU_CLERK,2500, - ,114,30
+120,Matthew,Weiss,MWEISS,650.123.1234,18-JUL-04,ST_MAN,8000, - ,100,50
+121,Adam,Fripp,AFRIPP,650.123.2234,10-APR-05,ST_MAN,8200, - ,100,50
+122,Payam,Kaufling,PKAUFLIN,650.123.3234,01-MAY-03,ST_MAN,7900, - ,100,50
+123,Shanta,Vollman,SVOLLMAN,650.123.4234,10-OCT-05,ST_MAN,6500, - ,100,50
+124,Kevin,Mourgos,KMOURGOS,650.123.5234,16-NOV-07,ST_MAN,5800, - ,100,50
+125,Julia,Nayer,JNAYER,650.124.1214,16-JUL-05,ST_CLERK,3200, - ,120,50
+126,Irene,Mikkilineni,IMIKKILI,650.124.1224,28-SEP-06,ST_CLERK,2700, - ,120,50
+127,James,Landry,JLANDRY,650.124.1334,14-JAN-07,ST_CLERK,2400, - ,120,50
+128,Steven,Markle,SMARKLE,650.124.1434,08-MAR-08,ST_CLERK,2200, - ,120,50
+129,Laura,Bissot,LBISSOT,650.124.5234,20-AUG-05,ST_CLERK,3300, - ,121,50
+130,Mozhe,Atkinson,MATKINSO,650.124.6234,30-OCT-05,ST_CLERK,2800, - ,121,50
+131,James,Marlow,JAMRLOW,650.124.7234,16-FEB-05,ST_CLERK,2500, - ,121,50
+132,TJ,Olson,TJOLSON,650.124.8234,10-APR-07,ST_CLERK,2100, - ,121,50
+133,Jason,Mallin,JMALLIN,650.127.1934,14-JUN-04,ST_CLERK,3300, - ,122,50
+134,Michael,Rogers,MROGERS,650.127.1834,26-AUG-06,ST_CLERK,2900, - ,122,50
+135,Ki,Gee,KGEE,650.127.1734,12-DEC-07,ST_CLERK,2400, - ,122,50
+136,Hazel,Philtanker,HPHILTAN,650.127.1634,06-FEB-08,ST_CLERK,2200, - ,122,50
+137,Renske,Ladwig,RLADWIG,650.121.1234,14-JUL-03,ST_CLERK,3600, - ,123,50
+138,Stephen,Stiles,SSTILES,650.121.2034,26-OCT-05,ST_CLERK,3200, - ,123,50
+139,John,Seo,JSEO,650.121.2019,12-FEB-06,ST_CLERK,2700, - ,123,50
+140,Joshua,Patel,JPATEL,650.121.1834,06-APR-06,ST_CLERK,2500, - ,123,50
+141,Josh,Patel,JPATEL,650.121.1834,06-APR-06,ST_CLERK,2500, - ,123,300
+
+
+======================================================================================
+https://github.com/akgeoinsys/akdatasets
+
+
+
+sales_india_df.dropDuplicates().sort("state","city").show()
+sales_df.select("city").dropDuplicates(["city"]).show()
+sales_india_df.dropDuplicates().sort(["state","city"],ascending=[1,0]).show()
+sales_india_df.dropDuplicates().orderBy(["state","city"],ascending=[1,0]).show()
+
+from pyspark.sql.functions import col
+sales_india_df.dropDuplicates().sort(col("state").desc()).show()
+
+===========================================================================
+
+sales_df=spark.read.option("header","true").csv("file:///home/ubuntu/datasets/superstore.csv")
+sales_df=spark.read.option("header","true").option("inferSchema","true").csv("file:///home/ubuntu/datasets/superstore.csv")
+
+sales_df.select("country","state","city").filter("country='India'").show()
+
+sales_india_df=sales_df.select("country","state","city").filter("country='India'")
+
+sales_india_df_res=sales_df.select("country","state","city").filter("country='India'").show()
+==============================================
+https://data-flair.training/blogs/dag-in-apache-spark/
+
+
+https://data-flair.training/blogs/dag-in-apache-spark/
+
+
+
+##to find out spark job url 
+
+sc.uiWebUrl
+
+
+
+
+text_file = spark.sparkContext.textFile("file:///home/ubuntu/sample.txt")
+
+counts = (
+    text_file.flatMap(lambda line: line.split(" "))
+    .map(lambda word: (word, 1))
+    .reduceByKey(lambda a, b: a + b)
+)
+
+===========Tranformation ==========
+text_file = spark.sparkContext.textFile("file:///home/ubuntu/sample.txt")
+
+words= text_file.flatMap(lambda line: line.split(" "))
+
+groupwords=words.map(lambda word: (word, 1))
+
+wordcount=groupwords.reduceByKey(lambda a, b: a + b)
+
+
+---------------------------------------------
+
+
+Verify Spark & PySpark
+Ensure ~/.bashrc has:
+
+export SPARK_HOME=/opt/spark
+export PATH=$PATH:$SPARK_HOME/bin
+export PYTHONPATH=$SPARK_HOME/python:$PYTHONPATH
+export PYSPARK_PYTHON=python3
+export PYSPARK_DRIVER_PYTHON=jupyter
+export PYSPARK_DRIVER_PYTHON_OPTS='notebook'
+
+Then run:
+source ~/.bashrc
+Launch PySpark with Jupyter
+Activate your PySpark environment:
+
+cd ~
+source pyspark_env/bin/activate
+pyspark
+
+
+
+===========================================================
+Day 4
+
+sqoop 
+
+Bulk data transfer tool / Data ingestion tool
+
+
+Mysql --------------------> HDFS
+Mysql ---------------------> Hive table
+
+
+--Login to mysql
+
+sudo mysql -u root -p
+
+Passwork for ak : P@55word 
+
+pwd(mysql) :root
+
+---------------------------------------
+ create database sqoopdb;
+
+use sqoopdb;
+
+create table policy (policy_id int, policy_holder  varchar(10),sum_insured int, terms_in_years int);
+
+insert into policy values(3001,’Anand’,50000,30);
+insert into policy values(100,'Ak',50000,10);
+insert into policy values(3002,'Gautam',50000,10);
+
+
+--open new terminal and execute the following sqoop commands
+
+---------------------------------------------------------------------------------------------------
+---loading data from mysql table to hdfs file 
+--/user/ak/  is the sqoop staging area 
+--After execution , find the folder under /user/ak/policy 
+
+sqoop-import --connect jdbc:mysql://localhost:3306/sqoopdb?useSSL=false -username ak  -password ak  -table policy -m 1
+------------------------------------------------------------
+sqoop-import --connect jdbc:mysql://localhost/sqoopdb?useSSL=false -username hiveuser  -password hivepassword  -table policy --where "policy_holder='bbb'" --append --split-by policy_id -m 2;
+
+-m is to set number of mappers 
+this is only for non-primary key tables . 
+-----------------------------------------------------------------------------------------
+--loading data to user defined directory 
+
+sqoop-import --connect jdbc:mysql://localhost/sqoopdb?useSSL=false -username hiveuser  -password hivepassword  -table policy --where "policy_holder='anand'" --target-dir  /yourname/mysqlload/  --append -m 1;
+
+----to list all the tables from database
+sqoop-list-tables --connect jdbc:mysql://localhost/sqoopdb?useSSL=false -username hiveuser  -password hivepassword 
+
+sqoop-list-databases --connect jdbc:mysql://localhost/ -username hiveuser  -password hivepassword 
+
+
+======================================================
+
+sudo nano /usr/local/hadoop/etc/hadoop/mapred-site.xml 
+
+<property>
+  <name>yarn.app.mapreduce.am.env</name>
+  <value>HADOOP_MAPRED_HOME=$HADOOP_HOME</value>
+</property>
+<property>
+  <name>mapreduce.map.env</name>
+  <value>HADOOP_MAPRED_HOME=$HADOOP_HOME</value>
+</property>
+<property>
+  <name>mapreduce.reduce.env</name>
+  <value>HADOOP_MAPRED_HOME=$HADOOP_HOME</value>
+</property>
+
+
+===============================================
+##add it in .bashrc --> sudo nano .bashrc 
+
+export HADOOP_INSTALL=$HADOOP_HOME
+export HADOOP_MAPRED_HOME=$HADOOP_HOME
+export HADOOP_COMMON_HOME=$HADOOP_HOME
+export HADOOP_HDFS_HOME=$HADOOP_HOME
+export YARN_HOME=$HADOOP_HOME
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+
+
+create table patient(pid INT, pname STRING, drug STRING,gender string, 
+tot_amt INT) row format delimited fields terminated by ',' stored as textfile;
+
+###loading data from local (ubuntu)
+load data local inpath '/home/ubuntu/datasets/patient.csv' into table patient; 
+
+###new terminal to run the hadoop fs commands  -first sudo su then run following commands
+
+hadoop fs -mkdir /healthcare
+root@ip-172-31-40-5:/home/ubuntu# hadoop fs -put datasets/patient.txt /healthcare
+
+###in hive --> load data from hdfs 
+load data inpath '/healthcare/patient.txt' into table patient;
+
+=====================External table ================
+
+hadoop fs -mkdir /healthcare/ltiemp
+
+hadoop fs -put datasets/emp.csv /healthcare/ltiemp
+
+##hive external tables are created on top of the existing file 
+
+CREATE EXTERNAL TABLE employees(empno int,ename string,salary int) 
+ ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LINES TERMINATED BY  '\n' 
+  STORED AS TEXTFILE     LOCATION '/healthcare/ltiemp/';
+
+---when you drop the external table only metadata get deleted from hive but data remains same 
+--where as managed table drop command deletes both metadata and data  
+
+----load large 
+load data local inpath '/home/ubuntu/datasets/patient.dat' into table patient;
+
+----storage optimized ==========
+
+create table pat_orc_file(pid int,pname string,drug string,gender string,amt int) row format delimited fields terminated by ',' lines terminated by '\n' stored as orcfile;
+
+create table pat_parquet_file(pid int,pname string,drug string,gender string,amt int) row format delimited fields terminated by ',' lines terminated by '\n' stored as parquet;
+
+insert into pat_orc_file select * from patient;
+insert into pat_parquet_file select * from patient;
+
+###hive partitioning 
+create table part_patient(pid int,pname string,gender string,tot_amt int)
+ partitioned by (drug string);
+
+insert into part_patient select pid,pname, gender,tot_amt,drug from patient;
+
+###quering partioned table ---> faster query results on large datasets 
+select * from part_patient where drug='Crocin';
+
+### querying non-partitioned table 
+
+select * from patient where drug='Crocin';
+
+## Bucketing   
+
+## hash value (clustered column) mod (no of buckets)
+## Hash value(Para) mod 4 ---> 
+4000  mod 4 ⇒ 
+
+
+create table bucket_patient(pid int,pname string,drug string,gender string,amt int) 
+clustered by (drug) into 4 buckets;
+
+insert overwrite table bucket_patient select * from patient; 
+
+select * from bucket_patient TABLESAMPLE(BUCKET 1 OUT OF 4 ON drug);
+
+select * from bucket_patient TABLESAMPLE(50 percent);
+
+
+###ACID properties
+
+SET hive.support.concurrency=true;
+SET hive.txn.manager=org.apache.hadoop.hive.ql.lockmgr.DbTxnManager; 
+SET hive.compactor.initiator.on=true;
+SET hive.compactor.worker.threads=1; 
+-------------------------------------------
+ 
+
+create table hive_dml(emp_id int, first_name string, last_name string)clustered by (emp_id) into 4 buckets stored as orc tblproperties ('transactional'='true');
+----
+insert into hive_dml values (1001501,'alaister','briito');
+
+update hive_dml set first_name='Alister' where emp_id=1001501;
+=================================================
+rm -rf metastore_db/ derby.log
+schematool -dbType derby -initSchema
+
+hive --service metastore &
+
+hive --service hiveserver2 &
+
+netstat -tuln | grep 10000
+
+
+
+Day 3 
+
+
+https://github.com/akgeoinsys/retail/blob/main/datasets-20230809T065223Z-001.zip
+
+
+
+==========================================
+
+ps -ef | grep HiveMetaStore
+
+hive --service metastore &
+
+beeline --incremental=true
+
+
+start-dfs.sh
+
+start-yarn.sh
+
+beeline -u jdbc:hive2://localhost:10000/default --incremental=true
+
+show databases;
+
+=====================================================================
+docker cp hadoop-3.3.6.tar.gz 962829eb4ab8:/opt/
+
+hdfs dfs -mkdir /user/ubuntu/input
+rm student_scores.txt
+echo -e "Math\t85\nMath\t78\nScience\t90\nScience\t80\nHistory\t88" > student_scores.txt
+hdfs dfs -put student_scores.txt /user/ubuntu/input/
+
+hadoop jar $HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-*.jar \
+    -input /user/ubuntu/input/student_scores.txt \
+    -output /user/ubuntu/output_score \
+    -mapper /home/ubuntu/score_mapper.py \
+    -reducer /home/ubuntu/score_reducer.py
+
+
+
+hadoop jar $HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-*.jar     -input /user/hadoop/input/student_scores.txt     -output /user/hadoop/output_scores     -mapper /home/ubuntu/score_mapper.py    -reducer /home/ubuntu/score_reducer.py 
+
+
+
+
+###open  /usr/local/hadoop/etc/hadoop/mapred-site.xml 
+
+<configuration>
+  <property>
+    <name>mapreduce.framework.name</name>
+    <value>yarn</value>
+  </property>
+<property>
+  <name>yarn.app.mapreduce.am.env</name>
+  <value>HADOOP_MAPRED_HOME=$HADOOP_HOME</value>
+</property>
+<property>
+  <name>mapreduce.map.env</name>
+  <value>HADOOP_MAPRED_HOME=$HADOOP_HOME</value>
+</property>
+<property>
+  <name>mapreduce.reduce.env</name>
+  <value>HADOOP_MAPRED_HOME=$HADOOP_HOME</value>
+</property>
+
+</configuration>
+
+
+=====================================
+Step 1: Preparing Input Data
+
+
+Create a directory for input data in HDFS:
+
+
+hdfs dfs -mkdir /user/ubuntu/input
+echo -e "Math\t85\nMath\t78\nScience\t90\nScience\t80\nHistory\t88" > student_scores.txt
+hdfs dfs -put student_scores.txt /user/ubuntu/input/
+
+hadoop jar $HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-*.jar \
+    -input /user/ubuntu/input/student_scores.txt \
+    -output /user/ubuntu/output_score \
+    -mapper /home/ubuntu/score_mapper.py \
+    -reducer /home/ubuntu/score_reducer.py
+
+Create a text file named student_scores.txt with the following content:
+
+
+echo -e "Math\t85\nMath\t78\nScience\t90\nScience\t80\nHistory\t88" > student_scores.txt
+
+
+Upload the file to HDFS:
+
+
+
+hdfs dfs -put student_scores.txt /user/hadoop/input/
+
+Step 2: Writing the Mapper Function
+
+
+Create a Python script for the mapper:
+
+nano score_mapper.py
+
+
+Add the following code:
+
+#!/usr/bin/env python3
+import sys
+
+for line in sys.stdin:
+    course, score = line.strip().split("\t")
+    print(f"{course}\t{score}")
+
+
+Make the script executable:
+
+chmod +x score_mapper.py
+
+Step 3: Writing the Reducer Function
+
+
+Create a Python script for the reducer:
+
+
+
+nano score_reducer.py
+
+
+Add the following code:
+
+
+
+#!/usr/bin/env python3
+import sys
+
+course_scores = {}
+
+for line in sys.stdin:
+    course, score = line.strip().split("\t")
+    score = int(score)
+    if course in course_scores:
+        course_scores[course].append(score)
+    else:
+        course_scores[course] = [score]
+
+for course, scores in course_scores.items():
+    avg_score = sum(scores) / len(scores)
+    print(f"{course}\t{avg_score:.2f}")
+
+
+Make the script executable:
+
+chmod +x score_reducer.py
+
+Step 4: Running the MapReduce Job
+
+
+Execute the MapReduce job using Hadoop Streaming:
+
+hadoop jar $HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-*.jar \
+    -input /user/hadoop/input/student_scores.txt \
+    -output /user/hadoop/output_scores \
+    -mapper /home/ubuntu/score_mapper.py \
+    -reducer /home/ubuntu/score_reducer.py
+
+Step 5: Analyzing the Execution Flow
+
+
+5.1 Checking the Map Phase
+
+
+Check how the Mapper splits input files:
+
+
+
+hdfs fsck /user/hadoop/input/student_scores.txt -files -blocks
+
+
+View the intermediate Mapper output:
+
+yarn logs -applicationId <application_id> | grep -i "Map output"
+
+5.2 Understanding the Shuffle & Sort Phase
+
+
+View logs to understand how data is grouped:
+
+
+
+yarn logs -applicationId <application_id> | grep -i "shuffle"
+
+5.3 Checking the Reduce Phase
+
+
+View the final Reduce phase output stored in HDFS:
+
+hdfs dfs -cat /user/hadoop/output_scores/part-00000
+
+Step 6: Cleaning Up and Re-Running the Job
+
+
+Delete the output directory for future runs:
+
+hdfs dfs -rm -r /user/hadoop/output_scores
+
+Summary
+Explored the five phases of MapReduce: Input Split, Mapping, Shuffle, Sorting, and Reducing.
+Implemented a Python-based MapReduce program to compute average student scores.
+Monitored job execution through Hadoop logs.
+
+
+
+Day 2 
+package com.mapreduce.wc;
+import java.io.IOException; 
+import org.apache.hadoop.conf.Configuration; 
+import org.apache.hadoop.fs.Path; 
+import org.apache.hadoop.io.IntWritable; 
+import org.apache.hadoop.io.LongWritable; 
+import org.apache.hadoop.io.Text; 
+import org.apache.hadoop.mapreduce.Job; 
+import org.apache.hadoop.mapreduce.Mapper; 
+import org.apache.hadoop.mapreduce.Reducer; 
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.util.GenericOptionsParser; 
+
+public class WordCount { 
+  public static void main(String [] args) throws Exception 
+  { 
+    Configuration c=new Configuration(); 
+    String[] files=new GenericOptionsParser(c,args).getRemainingArgs(); 
+    Path input=new Path(files[0]); 
+    Path output=new Path(files[1]); 
+    Job j=new Job(c,"wordcount"); 
+    j.setJarByClass(WordCount.class); 
+    j.setMapperClass(MapForWordCount.class); 
+    j.setReducerClass(ReduceForWordCount.class); 
+    j.setOutputKeyClass(Text.class); 
+    j.setOutputValueClass(IntWritable.class); 
+    FileInputFormat.addInputPath(j, input); 
+    FileOutputFormat.setOutputPath(j, output); 
+    System.exit(j.waitForCompletion(true)?0:1); 
+  } 
+public static class MapForWordCount extends Mapper<LongWritable, Text, Text, 
+ IntWritable>{ 
+  public void map(LongWritable key, Text value, Context con) throws 
+IOException, InterruptedException
+  { 
+    String line = value.toString(); 
+    String[] words=line.split(" "); 
+    for(String word: words ) 
+    { 
+      Text outputKey = new Text(word.toUpperCase().trim()); 
+      IntWritable outputValue = new IntWritable(1); 
+      con.write(outputKey, outputValue); 
+    } 
+  } 
+} 
+public static class ReduceForWordCount extends Reducer<Text, IntWritable, Text, 
+IntWritable> 
+{ 
+  public void reduce(Text word, Iterable<IntWritable> values, Context con) 
+ throws IOException, InterruptedException 
+  { 
+    int sum = 0; 
+    for(IntWritable value : values) 
+    { 
+      sum += value.get();
+    } 
+    con.write(word, new IntWritable(sum)); 
+  } 
+ } 
+}
+
+
+=============================================================
+ cat >sample.txt
+      cat sample.txt 
+     hadoop fs -mkdir /ltim
+ 1301  hadoop fs -ls /
+ 1302  hadoop fs -copyFromLocal /home/ubuntu/sample.txt /ltim
+ 1303  hadoop fs -ls /
+ 1304  hadoop fs -cat /ltim/sample.txt
+ 1305  hadoop fs -ls /ltim
+ 1306  jps
+ 1307  ls
+ 1308  jps
+ 1309  hive
+ 1310  jps
+ 1311  hadoop fs -mkdir day2
+ 1312  pwd
+ 1313  cd /
+ 1314  pwd
+ 1315  cd
+ 1316  pwd
+ 1317  hadoop fs -ls /
+ 1318  hadoop fs -ls ;
+ 1319  hadoop fs -put sample.txt day2
+ 1320  hadoop fs -put -f sample.txt day2
+ 1321  hadoop fs -mkdir /2025/apr/09
+ 1322  hadoop fs -mkdir -p /2025/apr/09
+ 1323  hadoop fs -put  sample.txt day3
+ 1324  hadoop fs -rm day2
+ 1325  hadoop fs -rmdir day2
+ 1326  hadoop fs -rm -R  day2
+ 1327  hadoop fs -mkdir day2
+ 1328  hadoop fs -cp /ltim/sample.txt  day2
+ 1329  hadoop fs -put /home/ubuntu/spark-3.4.4-bin-hadoop3.tgz  /ltim
+ 1330  start-dfs.sh
+ 1331  start-yarn.sh
+ 1332  ls
+ 1333  history
+hadoop fs -setrep 3 /ltim/sample.txt
+
+
+
+#Abhishek
+
+ 🔧 Step-by-Step Hadoop 3.3.6 Installation
+✅ Step 1: Install Java (if not already installed)
+sudo apt update
+sudo apt install openjdk-11-jdk -y [installed you don’t need to]
+Verify:
+java -version
+
+✅ Step 2: Download and Extract Hadoop
+cd /opt
+sudo wget https://downloads.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz(downloaded don’t download)
+sudo wget https://downloads.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz(downloaded don’t download)
+sudo tar -xvzf hadoop-3.3.6.tar.gz
+sudo mv hadoop-3.3.6 hadoop
+sudo chown -R $USER:$USER hadoop
+
+✅ Step 3: Set Hadoop Environment Variables
+Add this to ~/.bashrc:
+export HADOOP_HOME=/opt/hadoop
+export HADOOP_INSTALL=$HADOOP_HOME
+export HADOOP_MAPRED_HOME=$HADOOP_HOME
+export HADOOP_COMMON_HOME=$HADOOP_HOME
+export HADOOP_HDFS_HOME=$HADOOP_HOME
+export YARN_HOME=$HADOOP_HOME
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
+export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+Then reload it:
+source ~/.bashrc
+
+✅ Step 4: Configure Hadoop Files
+Move into config directory:
+cd $HADOOP_HOME/etc/hadoop
+📁 1. hadoop-env.sh
+Set JAVA_HOME:
+open hadoop-env.sh
+Add:
+export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+
+📁 2. core-site.xml
+<configuration>
+  <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://localhost:9000</value>
+  </property>
+</configuration>
+
+📁 3. hdfs-site.xml
+<configuration>
+  <property>
+    <name>dfs.replication</name>
+    <value>1</value>
+  </property>
+  <property>
+    <name>dfs.namenode.name.dir</name>
+    <value>file:///opt/hadoop_data/hdfs/namenode</value>
+  </property>
+  <property>
+    <name>dfs.datanode.data.dir</name>
+    <value>file:///opt/hadoop_data/hdfs/datanode</value>
+  </property>
+</configuration>
+sudo mkdir -p /opt/hadoop_data/hdfs/namenode
+sudo mkdir -p /opt/hadoop_data/hdfs/datanode
+sudo chown -R $USER:$USER /opt/hadoop_data
+
+📁 4. mapred-site.xml
+<configuration>
+  <property>
+    <name>mapreduce.framework.name</name>
+    <value>yarn</value>
+  </property>
+</configuration>
+
+📁 5. yarn-site.xml
+<configuration>
+  <property>
+    <name>yarn.nodemanager.aux-services</name>
+    <value>mapreduce_shuffle</value>
+  </property>
+</configuration>
+
+✅ Step 5: Setup Passwordless SSH
+ssh-keygen -t rsa -P "" -f ~/.ssh/id_rsa
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+ssh localhost  # should not ask password
+
+✅ Step 6: Format the Namenode
+hdfs namenode -format
+
+✅ Step 7: Start Hadoop Daemons
+start-dfs.sh
+Start YARN:
+start-yarn.sh
+
+✅ Step 8: Verify Services
+Check Java processes:
+jps
+Expected:
+NameNode
+DataNode
+ResourceManager
+NodeManager
+
+✅ Step 9: Test HDFS
+hdfs dfs -mkdir /test
+hdfs dfs -ls /
+
+
+
+create table patient(pid INT, pname STRING, drug STRING, gender STRING,tot_amt INT) row format delimited fields terminated by ',' stored as textfile;
+
+
+
+
+
+
